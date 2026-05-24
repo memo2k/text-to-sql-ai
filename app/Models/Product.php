@@ -10,7 +10,7 @@ class Product extends Model
 
     public function attributesOptions()
     {
-        return $this->belongsToMany(AttributeOption::class);
+        return $this->belongsToMany(AttributeOption::class, 'product_attribute_option');
     }
 
     public function productCategory()
