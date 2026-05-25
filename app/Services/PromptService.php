@@ -11,7 +11,7 @@ class PromptService
         $schema = self::introspect($databaseName);
         $lines = [
             "Database: {$schema['name']} ({$schema['dialect']})",
-            'Only query tables listed below. Table names are exact — include the store_ prefix.',
+            'Only query tables listed below. Table names are exact.',
             '',
         ];
 
@@ -51,14 +51,22 @@ class PromptService
         $config = config('ai.databases.' . $databaseName);
         $connection = $config['connection'];
         $schema = DB::connection($connection)->getDatabaseName();
+        $excluded = $this->excludedTables($databaseName);
 
-        $tables = DB::connection($connection)->select(
-            'SELECT TABLE_NAME AS name
-             FROM information_schema.TABLES
-             WHERE TABLE_SCHEMA = ? AND TABLE_NAME LIKE ?
-             ORDER BY TABLE_NAME',
-            [$schema, '%']
-        );
+        $sql = 'SELECT TABLE_NAME AS name
+                FROM information_schema.TABLES
+                WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = \'BASE TABLE\'';
+        $bindings = [$schema];
+
+        if ($excluded !== []) {
+            $placeholders = implode(', ', array_fill(0, count($excluded), '?'));
+            $sql .= " AND TABLE_NAME NOT IN ({$placeholders})";
+            $bindings = array_merge($bindings, $excluded);
+        }
+
+        $sql .= ' ORDER BY TABLE_NAME';
+
+        $tables = DB::connection($connection)->select($sql, $bindings);
 
         $result = [
             'databaseName' => $databaseName,
@@ -112,5 +120,16 @@ class PromptService
         }
 
         return $result;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function excludedTables(string $databaseName): array
+    {
+        $global = config('ai.excluded_tables', []);
+        $perDatabase = config("ai.databases.{$databaseName}.excluded_tables", []);
+
+        return array_values(array_unique([...$global, ...$perDatabase]));
     }
 }
