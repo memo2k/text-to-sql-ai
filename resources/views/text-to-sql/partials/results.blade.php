@@ -4,7 +4,7 @@
     $columns = $hasResults ? array_keys((array) $rows[0]) : [];
 @endphp
 
-<div id="results-container" class="flex flex-col gap-4">
+<div class="flex flex-col gap-4">
     <p id="results-meta" class="text-xs text-base-content/45">
         @if ($hasResults)
             {{ count($rows) }} {{ Str::plural('row', count($rows)) }}

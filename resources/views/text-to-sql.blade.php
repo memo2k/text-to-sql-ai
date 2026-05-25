@@ -12,7 +12,7 @@
             Describe the data you need — we’ll turn it into a query.
         </p>
     </header>
-
+    
     <div class="mb-12 flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
         <aside
             class="lg:order-1 lg:w-56 lg:shrink-0 xl:w-64"
@@ -29,19 +29,15 @@
                 </button>
             </div>
 
-            <div id="history-empty">
-                <p class="text-sm leading-relaxed text-base-content/40">Nothing asked yet.</p>
+            <div class="max-h-64 overflow-y-auto pr-1 lg:max-h-80">
+                @include('text-to-sql.partials.questions', ['questions' => $questions ?? collect(), 'questionId' => $question?->id ?? null])
             </div>
-
-            <div
-                id="history-list"
-                class="hidden max-h-64 space-y-4 overflow-y-auto pr-1 lg:max-h-80"
-            ></div>
         </aside>
 
         <div class="min-w-0 flex-1 lg:order-2">
             <form id="question-form" class="flex flex-col gap-4" action="{{ route('text-to-sql.generate') }}" method="POST">
                 @csrf
+                <input type="hidden" name="question_id" value="{{ $question?->id ?? null }}">
                 <label class="form-control w-full">
                     <span class="sr-only">Your question</span>
                     <textarea
@@ -50,14 +46,10 @@
                         rows="6"
                         class="textarea textarea-lg w-full resize-none rounded-2xl border-base-300/80 bg-base-100 text-base leading-relaxed shadow-sm transition-shadow focus:border-primary/40 focus:shadow-md focus:outline-none"
                         placeholder="Show users who signed up in the last 30 days, newest first…"
-                        required
-                    ></textarea>
+                        required>{{ $question?->question ?? '' }}</textarea>
                 </label>
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <span class="text-xs text-base-content/40">
-                        <kbd class="kbd kbd-sm">⌘</kbd>
-                        <kbd class="kbd kbd-sm">↵</kbd>
-                        to run
                     </span>
                     <button type="button" id="generate-btn" class="btn btn-primary rounded-full px-6">
                         <span id="submit-label">Ask</span>
@@ -71,10 +63,10 @@
     <section class="border-t border-base-300/50 pt-10" aria-labelledby="results-heading">
         <h2 id="results-heading" class="mb-4 text-sm font-medium text-base-content/70">Results</h2>
 
-        <div id="results-container">
+        <div id="results-container" class="transition-opacity duration-300">
         @include('text-to-sql.partials.results', [
-                'rows' => $data ?? [],
-                'sql' => $sqlQuery ?? null,
+                'rows' => $rows ?? [],
+                'sql' => $sql ?? null,
             ])
         </div>
     </section>
@@ -83,16 +75,40 @@
 
 @push('scripts')
 <script>
-    $(document).ready(function() {
-        $('#generate-btn').on('click', function() {
+    $(function () {
+        var $btn = $('#generate-btn');
+        var $results = $('#results-container');
+        var $questions = $('#questions-container');
+        var $label = $('#submit-label');
+        var $spinner = $('#submit-spinner');
+
+        function setLoading(loading) {
+            $btn.prop('disabled', loading);
+            $label.toggleClass('hidden', loading);
+            $spinner.toggleClass('hidden', !loading);
+            $results.toggleClass('opacity-40', loading);
+            $questions.toggleClass('opacity-40', loading);
+        }
+
+        $btn.on('click', function () {
+            setLoading(true);
+
             $.ajax({
                 url: '{{ route('text-to-sql.generate') }}',
                 type: 'POST',
                 data: $('#question-form').serialize(),
-            }).done(function(response) {
-                $('#results-container').html(response.htmlContent);
-            }).fail(function(xhr, status, error) {
-                console.log(xhr.responseText);
+            }).done(function (response) {
+                if (response.error) {
+                    $results.html('<div class="alert alert-error">' + response.error + '</div>');
+                    return;
+                }
+                
+                $results.hide().html(response.resultsHtml).fadeIn(200);
+                $questions.hide().html(response.questionsHtml).fadeIn(200);
+            }).fail(function () {
+                $results.html('<div class="alert alert-error">Something went wrong. Try again.</div>');
+            }).always(function () {
+                setLoading(false);
             });
         });
     });
