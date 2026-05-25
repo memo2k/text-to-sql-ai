@@ -54,17 +54,17 @@ class SqlValidator
             }
         }
 
-        if ($this->referencesExcludedTable($this->maskLiterals($check))) {
+        $masked = $this->maskLiterals($check);
+
+        if ($this->referencesForbiddenSchema($masked)) {
             return $this->reject('Query may only use tables from the demo store schema.');
         }
 
-        if (preg_match('/\bLIMIT\s+\d+/i', $sql) === 1) {
-            return ['sql' => $sql];
+        if ($this->referencesExcludedTable($masked)) {
+            return $this->reject('Query may only use tables from the demo store schema.');
         }
 
-        $maxRows = config('ai.limits.max_rows', 1000);
-
-        return ['sql' => rtrim($sql, " \t\n\r;").' LIMIT '.$maxRows];
+        return ['sql' => $this->enforceLimit($sql)];
     }
 
     /**
@@ -73,6 +73,46 @@ class SqlValidator
     private function reject(string $message): array
     {
         return ['error' => $message];
+    }
+
+    private function enforceLimit(string $sql): string
+    {
+        $sql = rtrim($sql, " \t\n\r;");
+        $maxRows = max(1, (int) config('ai.limits.max_rows', 1000));
+
+        if (preg_match('/\bLIMIT\s+(\d+)\s*,\s*(\d+)\s*$/i', $sql, $matches) === 1) {
+            $offset = (int) $matches[1];
+            $count = min((int) $matches[2], $maxRows);
+
+            return preg_replace(
+                '/\bLIMIT\s+\d+\s*,\s*\d+\s*$/i',
+                'LIMIT '.$offset.', '.$count,
+                $sql
+            ) ?? $sql;
+        }
+
+        if (preg_match('/\bLIMIT\s+(\d+)\s+OFFSET\s+(\d+)\s*$/i', $sql, $matches) === 1) {
+            $count = min((int) $matches[1], $maxRows);
+            $offset = (int) $matches[2];
+
+            return preg_replace(
+                '/\bLIMIT\s+\d+\s+OFFSET\s+\d+\s*$/i',
+                'LIMIT '.$count.' OFFSET '.$offset,
+                $sql
+            ) ?? $sql;
+        }
+
+        if (preg_match('/\bLIMIT\s+(\d+)\s*$/i', $sql, $matches) === 1) {
+            $count = min((int) $matches[1], $maxRows);
+
+            return preg_replace(
+                '/\bLIMIT\s+\d+\s*$/i',
+                'LIMIT '.$count,
+                $sql
+            ) ?? $sql;
+        }
+
+        return $sql.' LIMIT '.$maxRows;
     }
 
     private function stripComments(string $sql): string
@@ -88,6 +128,20 @@ class SqlValidator
         $sql = preg_replace('/"([^"\\\\]|\\\\.)*"/', '""', $sql) ?? $sql;
 
         return preg_replace('/`([^`\\\\]|\\\\.)*`/', '``', $sql) ?? $sql;
+    }
+
+    private function referencesForbiddenSchema(string $sql): bool
+    {
+        foreach (config('ai.forbidden_schemas', []) as $schema) {
+            $quoted = preg_quote($schema, '/');
+            $pattern = '/\b`?'.$quoted.'`?(\s*\.\s*|\b)/i';
+
+            if (preg_match($pattern, $sql) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function referencesExcludedTable(string $sql): bool

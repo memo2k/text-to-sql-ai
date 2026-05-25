@@ -1,50 +1,57 @@
 <?php
 
 return [
-  'anthropic' => [
-    'api_key' => env('ANTHROPIC_API_KEY'),
-    'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-4-20250514'),
-    'max_tokens' => env('ANTHROPIC_MAX_TOKENS', 2048),
-    'api_version' => '2023-06-01',
-  ],
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-4-20250514'),
+        'max_tokens' => env('ANTHROPIC_MAX_TOKENS', 2048),
+        'api_version' => '2023-06-01',
+    ],
 
-  'limits' => [
-    'max_rows' => env('ASKSQL_MAX_ROWS', 1000),
-    'max_question_length' => 2000,
-    'queries_per_hour' => env('ASKSQL_QUERIES_PER_HOUR', 20),
-    'statement_timeout_seconds' => 5,
-  ],
+    'limits' => [
+        'max_rows' => env('ASKSQL_MAX_ROWS', 1000),
+        'max_question_length' => 2000,
+        'queries_per_hour' => env('ASKSQL_QUERIES_PER_HOUR', 20),
+        'statement_timeout_seconds' => 5,
+    ],
 
-  /*
+    /*
   | Tables omitted from schema introspection (and not exposed to the model).
   | Demo-store tables from database/migrations are included; everything else is hidden.
   */
-  'excluded_tables' => [
-    'migrations',
-    'users',
-    'password_reset_tokens',
-    'sessions',
-    'cache',
-    'cache_locks',
-    'jobs',
-    'job_batches',
-    'failed_jobs',
-    'questions',
-  ],
-
-  'databases' => [
-    'text_to_sql_ai' => [
-      'name' => 'Text to SQL AI',
-      'emoji' => '�',
-      'connection' => 'mysql',
-      'table_prefix' => 'text_to_sql_ai_',
-      'description' => 'Online tech store — customers, orders, products, and categories.',
-      'suggestions' => [
-        'Top 5 products by total order amount',
-        'Products that have never been ordered',
-        'Monthly revenue for the last 12 months',
-        'Categories with more than 2 products',
-      ],
+    'forbidden_schemas' => [
+        'information_schema',
+        'mysql',
+        'performance_schema',
+        'sys',
     ],
-  ],
+
+    'excluded_tables' => [
+        'migrations',
+        'users',
+        'password_reset_tokens',
+        'sessions',
+        'cache',
+        'cache_locks',
+        'jobs',
+        'job_batches',
+        'failed_jobs',
+        'questions',
+    ],
+
+    'databases' => [
+        'text_to_sql_ai' => [
+            'name' => 'Text to SQL AI',
+            'emoji' => '�',
+            'connection' => 'mysql',
+            'table_prefix' => 'text_to_sql_ai_',
+            'description' => 'Online tech store — customers, orders, products, and categories.',
+            'suggestions' => [
+                'Top 5 products by total order amount',
+                'Products that have never been ordered',
+                'Monthly revenue for the last 12 months',
+                'Categories with more than 2 products',
+            ],
+        ],
+    ],
 ];
