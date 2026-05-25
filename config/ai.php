@@ -15,6 +15,23 @@ return [
     'statement_timeout_seconds' => 5,
   ],
 
+  /*
+  | Tables omitted from schema introspection (and not exposed to the model).
+  | Demo-store tables from database/migrations are included; everything else is hidden.
+  */
+  'excluded_tables' => [
+    'migrations',
+    'users',
+    'password_reset_tokens',
+    'sessions',
+    'cache',
+    'cache_locks',
+    'jobs',
+    'job_batches',
+    'failed_jobs',
+    'questions',
+  ],
+
   'databases' => [
     'text_to_sql_ai' => [
       'name' => 'Text to SQL AI',
