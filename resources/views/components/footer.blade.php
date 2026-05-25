@@ -7,7 +7,12 @@
         <p>
             {{ $text ?? config('app.name', 'Laravel') }}
         </p>
-        <p>&copy; {{ date('Y') }}</p>
+        <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 sm:justify-end">
+            <a href="{{ route('privacy') }}" class="link link-hover text-base-content/55">
+                Privacy
+            </a>
+            <p>&copy; {{ date('Y') }}</p>
+        </div>
         {{ $slot }}
     </div>
 </footer>
