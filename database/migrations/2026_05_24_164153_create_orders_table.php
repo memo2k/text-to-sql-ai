@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->nullable();
+            $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
             $table->decimal('products_total_amount', 10, 2);
             $table->decimal('shipping_amount', 10, 2);
             $table->decimal('total_amount', 10, 2);
@@ -24,14 +24,8 @@ return new class extends Migration
             $table->string('state')->nullable();
             $table->string('zip')->nullable();
             $table->string('country')->nullable();
-            $table->string('customer_phone')->nullable();
-            $table->string('customer_email')->nullable();
-            $table->string('customer_first_name')->nullable();
-            $table->string('customer_last_name')->nullable();
             $table->string('customer_notes')->nullable();
-            
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            
+
             $table->timestamps();
         });
     }
