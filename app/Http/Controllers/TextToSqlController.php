@@ -34,14 +34,16 @@ class TextToSqlController extends Controller
 
     public function generate(Request $request)
     {
+        $maxQuestionLength = config('ai.limits.max_question_length', 2000);
+
         $request->validate([
-            'question' => 'required|string|max:255',
+            'question' => "required|string|max:{$maxQuestionLength}",
         ]);
 
         try {
             $sqlResult = $this->claudeService->generateSqlQuery($request->question);
 
-            if(isset($sqlResult['error'])) {
+            if (isset($sqlResult['error'])) {
                 return response()->json(['error' => $sqlResult['error']]);
             }
 
@@ -72,10 +74,10 @@ class TextToSqlController extends Controller
                 'questionId' => $question->id,
             ])->render();
 
-            return response()->json(['resultsHtml' => $resultsHtml, 'questionsHtml' => $questionsHtml,]);
+            return response()->json(['resultsHtml' => $resultsHtml, 'questionsHtml' => $questionsHtml]);
         } catch (\Throwable $e) {
             Log::error($e);
-            return response()->json(['error' => 'Something went wrong. Try again.',]);
+            return response()->json(['error' => 'Something went wrong. Try again.']);
         }
     }
 }

@@ -11,7 +11,7 @@ return [
   'limits' => [
     'max_rows' => env('ASKSQL_MAX_ROWS', 1000),
     'max_question_length' => 2000,
-    'queries_per_hour' => env('ASKSQL_QUERIES_PER_HOUR', 30),
+    'queries_per_hour' => env('ASKSQL_QUERIES_PER_HOUR', 20),
     'statement_timeout_seconds' => 5,
   ],
 

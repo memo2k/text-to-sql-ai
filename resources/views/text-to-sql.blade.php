@@ -105,8 +105,12 @@
                 
                 $results.hide().html(response.resultsHtml).fadeIn(200);
                 $questions.hide().html(response.questionsHtml).fadeIn(200);
-            }).fail(function () {
-                $results.html('<div class="alert alert-error">Something went wrong. Try again.</div>');
+            }).fail(function (xhr) {
+                var message = 'Something went wrong. Try again.';
+                if (xhr.status === 429 && xhr.responseJSON && xhr.responseJSON.error) {
+                    message = xhr.responseJSON.error;
+                }
+                $results.html('<div class="alert alert-error">' + message + '</div>');
             }).always(function () {
                 setLoading(false);
             });
