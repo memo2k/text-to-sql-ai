@@ -4,19 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Question;
 use App\Services\ClaudeService;
-use App\Services\SqlValidator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TextToSqlController extends Controller
 {
-    protected SqlValidator $sqlValidator;
     protected ClaudeService $claudeService;
 
-    public function __construct(SqlValidator $sqlValidator, ClaudeService $claudeService)
+    public function __construct(ClaudeService $claudeService)
     {
-        $this->sqlValidator = $sqlValidator;
         $this->claudeService = $claudeService;
     }
 
@@ -42,15 +39,14 @@ class TextToSqlController extends Controller
         ]);
 
         try {
-            $response = $this->claudeService->generateSqlQuery($request->question);
+            $sqlResult = $this->claudeService->generateSqlQuery($request->question);
 
-            if(isset($response['error'])) {
-                return response()->json(['error' => $response['error'],]);
+            if(isset($sqlResult['error'])) {
+                return response()->json(['error' => $sqlResult['error']]);
             }
 
-            $sqlResponse = json_decode($response['content'][0]['text'] ?? '', true);
-            $sqlQuery = $sqlResponse['sql'];
-            $sqlExplanation = $sqlResponse['explanation'] ?? '';
+            $sqlQuery = $sqlResult['sql'];
+            $sqlExplanation = $sqlResult['explanation'];
 
             $data = DB::connection('mysql')->select($sqlQuery);
 

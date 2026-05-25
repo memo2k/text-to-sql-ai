@@ -4,7 +4,7 @@ namespace App\Repositories;
 
 class ClaudeRepository
 {
-    public static function getSystemPrompt()
+    public function getSystemPrompt()
     {
         return <<<'PROMPT'
 You are an expert MySQL analyst. Generate a single read-only SQL query that answers the user's question.

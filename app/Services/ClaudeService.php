@@ -45,15 +45,18 @@ class ClaudeService
         $sqlResponse = json_decode($response['content'][0]['text'] ?? '', true);
 
         if (!is_array($sqlResponse)) {
-            return response()->json(['error' => 'The model returned an invalid response. Try again.',]);
+            return ['error' => 'The model returned an invalid response. Try again.',];
         }
 
         $validated = $this->sqlValidator->validate($sqlResponse['sql'] ?? '');
 
         if (isset($validated['error'])) {
-            return response()->json(['error' => $validated['error'],]);
+            return ['error' => $validated['error'],];
         }
 
-        return $response;
+        return [
+            'sql' => $validated['sql'],
+            'explanation' => $sqlResponse['explanation'],
+        ];
     }
 }
