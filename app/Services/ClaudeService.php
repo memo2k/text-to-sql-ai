@@ -7,13 +7,24 @@ use Illuminate\Support\Facades\Http;
 
 class ClaudeService
 {
+    protected PromptService $promptService;
+    protected ClaudeRepository $claudeRepository;
+    protected SqlValidator $sqlValidator;
+
+    public function __construct(PromptService $promptService, ClaudeRepository $claudeRepository, SqlValidator $sqlValidator)
+    {
+        $this->promptService = $promptService;
+        $this->claudeRepository = $claudeRepository;
+        $this->sqlValidator = $sqlValidator;
+    }
+
     public function generateSqlQuery(string $question)
     {
         $apiKey = config('ai.anthropic.api_key');
 
-        $schema = (new PromptService())->buildSchemaPrompt('text_to_sql_ai');
+        $schema = $this->promptService->buildSchemaPrompt('text_to_sql_ai');
 
-        $system = ClaudeRepository::getSystemPrompt();
+        $system = $this->claudeRepository->getSystemPrompt();
         $userMessage = "Schema:\n{$schema}\n\nQuestion: {$question}";
 
         $response = Http::timeout(60)
@@ -29,8 +40,20 @@ class ClaudeService
                 'messages' => [
                     ['role' => 'user', 'content' => $userMessage],
                 ],
-            ]);
+            ])->json();
 
-        return $response->json();
+        $sqlResponse = json_decode($response['content'][0]['text'] ?? '', true);
+
+        if (!is_array($sqlResponse)) {
+            return response()->json(['error' => 'The model returned an invalid response. Try again.',]);
+        }
+
+        $validated = $this->sqlValidator->validate($sqlResponse['sql'] ?? '');
+
+        if (isset($validated['error'])) {
+            return response()->json(['error' => $validated['error'],]);
+        }
+
+        return $response;
     }
 }
