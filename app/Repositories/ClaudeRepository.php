@@ -17,6 +17,8 @@ Rules:
 - Prefer explicit JOINs. Use MySQL syntax.
 - Include LIMIT (default 100) unless the question needs aggregation over all rows.
 - explanation is 1-2 sentences in plain English.
+- If the question is not clear, return an empty string for both sql and explanation.
+- If the question is not related to the schema, return an empty string for both sql and explanation.
 PROMPT;
     }
 }
