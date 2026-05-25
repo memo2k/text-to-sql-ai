@@ -34,8 +34,7 @@ class TextToSqlController extends Controller
 
     public function generate(Request $request)
     {
-        $maxQuestionLength = config('ai.limits.max_question_length', 2000);
-
+        $maxQuestionLength = config('ai.limits.max_question_length');
         $request->validate([
             'question' => "required|string|max:{$maxQuestionLength}",
         ]);
@@ -77,6 +76,7 @@ class TextToSqlController extends Controller
             return response()->json(['resultsHtml' => $resultsHtml, 'questionsHtml' => $questionsHtml]);
         } catch (\Throwable $e) {
             Log::error($e);
+
             return response()->json(['error' => 'Something went wrong. Try again.']);
         }
     }
