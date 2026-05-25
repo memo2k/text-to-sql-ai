@@ -1,58 +1,85 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Text to SQL AI
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Ask questions about your data in plain English and get back runnable SQL plus a result table — powered by **Claude** and a realistic **e-commerce demo database**.
 
-## About Laravel
+Built with **Laravel 13** as a portfolio project to explore natural-language analytics: schema-aware prompting, safe read-only execution, and a simple UI for iterating on questions.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## What it does
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+You type a question like *“Which categories have more than five products?”* The app:
 
-## Learning Laravel
+1. **Introspects** the MySQL schema (tables, columns, foreign keys, sample rows).
+2. **Sends** that context and your question to the Anthropic Messages API.
+3. **Parses** a structured JSON response containing the generated `SELECT` and a short explanation.
+4. **Runs** the query against the database and renders the rows in the browser.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Earlier questions are saved so you can revisit SQL and results without re-running the model.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```mermaid
+flowchart LR
+  A[Natural language question] --> B[Schema introspection]
+  B --> C[Claude API]
+  C --> D[JSON: sql + explanation]
+  D --> E[MySQL SELECT]
+  E --> F[Results table + history]
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## Tech stack
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Layer | Choices |
+|--------|---------|
+| Backend | PHP 8.3, Laravel 13 |
+| AI | Anthropic Claude (Messages API) |
+| Database | MySQL 8 |
+| Frontend | Blade, Tailwind CSS 4, DaisyUI, Vite, jQuery (AJAX) |
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Example questions
 
-## Security Vulnerabilities
+Try prompts like these against the seeded store:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- Top 5 products by total order amount
+- Products that have never been ordered
+- Monthly revenue for the last 12 months
+- Categories with more than 2 products
+
+---
+
+## How generation works (code map)
+
+| Piece | Role |
+|--------|------|
+| `PromptService` | Builds schema text from `information_schema` + sample rows |
+| `ClaudeRepository` | System prompt (JSON output, SELECT-only, LIMIT rules) |
+| `ClaudeService` | HTTP call to Anthropic Messages API |
+| `TextToSqlController` | Validates input, runs SQL, stores `Question`, returns HTML partials |
+
+Configuration lives in `config/ai.php` (model, token limits, database metadata).
+
+---
+
+## Project structure
+
+```
+app/
+  Http/Controllers/TextToSqlController.php
+  Services/ClaudeService.php, PromptService.php
+  Repositories/ClaudeRepository.php
+database/
+  migrations/          # store schema + questions table
+  seeders/TechStoreSeeder.php
+resources/views/
+  text-to-sql.blade.php
+  text-to-sql/partials/
+```
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT — see [LICENSE](LICENSE) if present, or use the same terms as your Laravel app skeleton.
