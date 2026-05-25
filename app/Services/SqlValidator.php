@@ -54,6 +54,10 @@ class SqlValidator
             }
         }
 
+        if ($this->referencesExcludedTable($this->maskLiterals($check))) {
+            return $this->reject('Query may only use tables from the demo store schema.');
+        }
+
         if (preg_match('/\bLIMIT\s+\d+/i', $sql) === 1) {
             return ['sql' => $sql];
         }
@@ -84,5 +88,18 @@ class SqlValidator
         $sql = preg_replace('/"([^"\\\\]|\\\\.)*"/', '""', $sql) ?? $sql;
 
         return preg_replace('/`([^`\\\\]|\\\\.)*`/', '``', $sql) ?? $sql;
+    }
+
+    private function referencesExcludedTable(string $sql): bool
+    {
+        foreach (config('ai.excluded_tables', []) as $table) {
+            $pattern = '/\b`?'.preg_quote($table, '/').'`?\b/i';
+
+            if (preg_match($pattern, $sql) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
