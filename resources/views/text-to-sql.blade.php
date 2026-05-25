@@ -20,13 +20,13 @@
         >
             <div class="mb-3 flex items-baseline justify-between gap-2">
                 <p id="history-label" class="text-xs text-base-content/45">Earlier questions</p>
-                <button
+                {{-- <button
                     type="button"
                     id="clear-history"
                     class="text-xs text-base-content/35 hover:text-error"
                 >
                     Clear
-                </button>
+                </button> --}}
             </div>
 
             <div class="max-h-64 overflow-y-auto pr-1 lg:max-h-80">
