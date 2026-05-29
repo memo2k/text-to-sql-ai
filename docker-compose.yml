@@ -8,6 +8,7 @@ services:
         - APP_ENV=${APP_ENV}
     environment:
       - APP_ENV=${APP_ENV}
+      - PORT=8000
       - CONTAINER_ROLE=app
       - DB_HOST=database
       - REDIS_HOST=redis
