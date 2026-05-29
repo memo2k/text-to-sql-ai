@@ -23,11 +23,7 @@ COPY .docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 WORKDIR /var/www
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-progress --no-interaction --no-scripts
-
 COPY . .
-RUN composer dump-autoload --optimize --no-interaction
 
 # Chown the app directory to the new user (fixes ownership from build steps)
 RUN chown -R appuser:appgroup /var/www
