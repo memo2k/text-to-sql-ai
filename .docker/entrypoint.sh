@@ -51,7 +51,7 @@ fi
 php artisan migrate --force --no-interaction
 
 if [ "${SEED_TECH_STORE}" = "true" ]; then
-    php artisan store:seed --no-interaction
+    php artisan db:seed --no-interaction
 fi
 
 if [ "${APP_ENV}" = "production" ]; then
