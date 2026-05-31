@@ -16,14 +16,13 @@ return [
     ],
 
     /*
-  | Tables omitted from schema introspection (and not exposed to the model).
-  | Demo-store tables from database/migrations are included; everything else is hidden.
-  */
+    | Tables omitted from schema introspection (and not exposed to the model).
+    | Demo-store tables from database/migrations are included; everything else is hidden.
+    */
     'forbidden_schemas' => [
         'information_schema',
-        'mysql',
-        'performance_schema',
-        'sys',
+        'pg_catalog',
+        'pg_toast',
     ],
 
     'excluded_tables' => [
@@ -42,8 +41,10 @@ return [
     'databases' => [
         'text_to_sql_ai' => [
             'name' => 'Text to SQL AI',
-            'emoji' => '�',
-            'connection' => 'mysql',
+            'emoji' => '🛒',
+            'connection' => 'pgsql',
+            'schema' => env('DB_SCHEMA', 'public'),
+            'dialect' => 'PostgreSQL',
             'table_prefix' => 'text_to_sql_ai_',
             'description' => 'Online tech store — customers, orders, products, and categories.',
             'suggestions' => [

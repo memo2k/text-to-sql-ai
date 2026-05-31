@@ -6,15 +6,17 @@ class SqlValidator
 {
     private const MAX_LENGTH = 16_384;
 
-    private const FORBIDDEN_PATTERN = '/\b(DELETE|DROP|UPDATE|INSERT|REPLACE|TRUNCATE|ALTER|CREATE|GRANT|REVOKE|CALL|EXEC(?:UTE)?|LOCK|UNLOCK|RENAME|LOAD|KILL)\b/i';
+    private const FORBIDDEN_PATTERN = '/\b(DELETE|DROP|UPDATE|INSERT|REPLACE|TRUNCATE|ALTER|CREATE|GRANT|REVOKE|CALL|EXEC(?:UTE)?|LOCK|UNLOCK|RENAME|COPY|LOAD|KILL)\b/i';
 
     /** @var list<string> */
     private const FORBIDDEN_PHRASES = [
-        'INTO OUTFILE',
-        'INTO DUMPFILE',
-        'LOAD_FILE',
+        'COPY TO',
+        'COPY FROM',
+        'PG_READ_FILE',
+        'PG_LS_DIR',
         'FOR UPDATE',
-        'LOCK IN SHARE MODE',
+        'FOR SHARE',
+        'FOR NO KEY UPDATE',
     ];
 
     /**
@@ -86,7 +88,7 @@ class SqlValidator
 
             return preg_replace(
                 '/\bLIMIT\s+\d+\s*,\s*\d+\s*$/i',
-                'LIMIT '.$offset.', '.$count,
+                'LIMIT '.$count.' OFFSET '.$offset,
                 $sql
             ) ?? $sql;
         }
@@ -125,18 +127,14 @@ class SqlValidator
     private function maskLiterals(string $sql): string
     {
         $sql = preg_replace("/'([^'\\\\]|\\\\.)*'/", "''", $sql) ?? $sql;
-        $sql = preg_replace('/"([^"\\\\]|\\\\.)*"/', '""', $sql) ?? $sql;
 
-        return preg_replace('/`([^`\\\\]|\\\\.)*`/', '``', $sql) ?? $sql;
+        return preg_replace('/"([^"\\\\]|\\\\.)*"/', '""', $sql) ?? $sql;
     }
 
     private function referencesForbiddenSchema(string $sql): bool
     {
         foreach (config('ai.forbidden_schemas', []) as $schema) {
-            $quoted = preg_quote($schema, '/');
-            $pattern = '/\b`?'.$quoted.'`?(\s*\.\s*|\b)/i';
-
-            if (preg_match($pattern, $sql) === 1) {
+            if ($this->referencesIdentifier($sql, $schema)) {
                 return true;
             }
         }
@@ -147,13 +145,19 @@ class SqlValidator
     private function referencesExcludedTable(string $sql): bool
     {
         foreach (config('ai.excluded_tables', []) as $table) {
-            $pattern = '/\b`?'.preg_quote($table, '/').'`?\b/i';
-
-            if (preg_match($pattern, $sql) === 1) {
+            if ($this->referencesIdentifier($sql, $table)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function referencesIdentifier(string $sql, string $identifier): bool
+    {
+        $quoted = preg_quote($identifier, '/');
+        $pattern = '/(?:"'.$quoted.'"|\b'.$quoted.'\b)(\s*\.\s*|\b)/i';
+
+        return preg_match($pattern, $sql) === 1;
     }
 }

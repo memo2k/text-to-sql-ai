@@ -49,7 +49,7 @@ class TextToSqlController extends Controller
             $sqlQuery = $sqlResult['sql'];
             $sqlExplanation = $sqlResult['explanation'];
 
-            $data = DB::connection('mysql')->select($sqlQuery);
+            $data = DB::connection('pgsql')->select($sqlQuery);
 
             $question = Question::updateOrCreate(
                 [
