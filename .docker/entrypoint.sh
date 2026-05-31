@@ -1,29 +1,29 @@
 #!/bin/bash
-set -euo pipefail
 
-cd /var/www
-
-PORT="${PORT:-10000}"
-
-# Fallback for local/docker-compose volume mounts without vendor in the image
 if [ ! -f "vendor/autoload.php" ]; then
-    composer install --no-interaction --no-dev --optimize-autoloader --no-progress
+    composer install --no-progress --no-interaction
 fi
 
-php artisan migrate --force
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
 
-if [ "${APP_ENV:-production}" = "production" ]; then
-    php artisan config:cache
-    php artisan route:cache
-    php artisan view:cache
-else
-    php artisan config:clear
-    php artisan route:clear
-    php artisan view:clear
+if [ -n "${DB_HOST}" ] && [ "${DB_CONNECTION:-pgsql}" = "pgsql" ]; then
+    echo "Waiting for PostgreSQL at ${DB_HOST}..."
+    until php -r "
+        try {
+            new PDO(
+                'pgsql:host=' . getenv('DB_HOST') . ';port=' . (getenv('DB_PORT') ?: '5432') . ';dbname=' . getenv('DB_DATABASE'),
+                getenv('DB_USERNAME'),
+                getenv('DB_PASSWORD')
+            );
+            exit(0);
+        } catch (Throwable \$e) {
+            exit(1);
+        }
+    " 2>/dev/null; do
+        sleep 2
+    done
 fi
 
-if [ "${RUN_DB_SEED:-false}" = "true" ]; then
-    php artisan db:seed --force
-fi
-
-exec php artisan serve --host=0.0.0.0 --port="${PORT}"
+exec php artisan serve --port="$PORT" --host=0.0.0.0 --env=.env

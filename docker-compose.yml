@@ -10,7 +10,12 @@ services:
       - APP_ENV=${APP_ENV}
       - PORT=8000
       - CONTAINER_ROLE=app
+      - DB_CONNECTION=pgsql
       - DB_HOST=database
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
     working_dir: /var/www
     volumes:
@@ -18,21 +23,27 @@ services:
     ports:
       - 8000:8000
     depends_on:
-      - database
-      - redis
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   # Database
   database:
-    image: mysql:8.0
+    image: postgres:17.2-alpine
     ports:
-      - 3306:3306
+      - "${DB_PORT:-5432}:5432"
     environment:
-      - MYSQL_DATABASE=${DB_DATABASE}
-      - MYSQL_USER=${DB_USERNAME}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - db-data:/var/lib/mysql
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   # Redis
   redis:
