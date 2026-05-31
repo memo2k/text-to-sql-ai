@@ -48,10 +48,11 @@ if [ -n "${DB_HOST}" ] || [ -n "${DB_URL}" ] || [ -n "${DATABASE_URL}" ]; then
     done
 fi
 
-php artisan migrate --force --no-interaction
-
 if [ "${SEED_TECH_STORE}" = "true" ]; then
+    php artisan migrate:fresh --force --no-interaction
     php artisan db:seed --no-interaction
+else
+    php artisan migrate --force --no-interaction
 fi
 
 if [ "${APP_ENV}" = "production" ]; then
