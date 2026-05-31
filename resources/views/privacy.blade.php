@@ -27,7 +27,7 @@
         <p>
             The demo is run by the owner of this deployment (the “operator”).
             Hosting is provided by
-            <a href="https://railway.app/legal/privacy" rel="noopener noreferrer" target="_blank" class="link link-primary">Railway</a>.
+            <a href="https://render.com/privacy" rel="noopener noreferrer" target="_blank" class="link link-primary">Render</a>.
         </p>
         </section>
 
@@ -80,7 +80,7 @@
         <h2 class="text-base font-semibold text-base-content">Retention</h2>
         <p>
             Submitted questions and results are stored in the application database until the operator
-            deletes them or resets the database. Logs on Railway may be retained according to Railway’s policies.
+            deletes them or resets the database. Logs on Render may be retained according to Render’s policies.
         </p>
         </section>
 
