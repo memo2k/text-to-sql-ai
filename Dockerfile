@@ -1,35 +1,53 @@
+FROM node:22-alpine AS assets
+
+WORKDIR /app
+
+COPY package.json package-lock.json vite.config.js ./
+COPY resources ./resources
+COPY public ./public
+
+RUN npm ci && npm run build
+
+
 FROM php:8.4 AS php
 
 ARG UID=1000
 ARG GID=1000
 
-RUN apt-get update -y
-RUN apt-get install -y unzip libpq-dev libcurl4-gnutls-dev 
+RUN apt-get update -y \
+    && apt-get install -y unzip libpq-dev libcurl4-gnutls-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN docker-php-ext-install pdo pdo_pgsql bcmath
 
 RUN pecl install -o -f redis \
     && rm -rf /tmp/pear \
     && docker-php-ext-enable redis
 
-# Create non-root user matching host UID/GID
 RUN groupadd -g ${GID} appgroup && \
     useradd -u ${UID} -g appgroup -m -s /bin/bash appuser
 
-# Copy composer binary as root
 COPY --from=composer:2.8.12 /usr/bin/composer /usr/bin/composer
 
-# Copy and make entrypoint executable as root (before user switch)
 COPY .docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 WORKDIR /var/www
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-progress --no-interaction --optimize-autoloader --no-scripts
+
 COPY . .
 
-# Chown the app directory to the new user (fixes ownership from build steps)
-RUN chown -R appuser:appgroup /var/www
+COPY --from=assets /app/public/build ./public/build
 
-# Switch to non-root user for runtime
+RUN composer dump-autoload --optimize \
+    && chown -R appuser:appgroup /var/www
+
 USER appuser
 
 ENV PORT=8000
+
+EXPOSE 8000
+
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
