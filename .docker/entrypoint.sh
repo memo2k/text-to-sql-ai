@@ -50,7 +50,7 @@ fi
 
 if [ "${SEED_TECH_STORE}" = "true" ]; then
     php artisan migrate:fresh --force --no-interaction
-    php artisan db:seed --no-interaction
+    php artisan db:seed --force --no-interaction
 else
     php artisan migrate --force --no-interaction
 fi
