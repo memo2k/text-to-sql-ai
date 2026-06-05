@@ -15,10 +15,10 @@ ARG UID=1000
 ARG GID=1000
 
 RUN apt-get update -y \
-    && apt-get install -y unzip libpq-dev libcurl4-gnutls-dev \
+    && apt-get install -y unzip libcurl4-gnutls-dev default-mysql-client \
     && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install pdo pdo_pgsql bcmath
+RUN docker-php-ext-install pdo pdo_mysql bcmath
 
 RUN pecl install -o -f redis \
     && rm -rf /tmp/pear \

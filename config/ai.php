@@ -21,8 +21,9 @@ return [
     */
     'forbidden_schemas' => [
         'information_schema',
-        'pg_catalog',
-        'pg_toast',
+        'mysql',
+        'performance_schema',
+        'sys',
     ],
 
     'excluded_tables' => [
@@ -42,9 +43,9 @@ return [
         'text_to_sql_ai' => [
             'name' => 'Text to SQL AI',
             'emoji' => '🛒',
-            'connection' => 'pgsql',
-            'schema' => env('DB_SCHEMA', 'public'),
-            'dialect' => 'PostgreSQL',
+            'connection' => 'mysql',
+            'schema' => env('DB_DATABASE', 'text_to_sql_ai'),
+            'dialect' => 'MySQL',
             'table_prefix' => 'text_to_sql_ai_',
             'description' => 'Online tech store — customers, orders, products, and categories.',
             'suggestions' => [
