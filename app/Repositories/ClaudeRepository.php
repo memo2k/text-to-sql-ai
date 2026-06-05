@@ -6,7 +6,7 @@ class ClaudeRepository
 {
     public function getSystemPrompt(): string
     {
-        $dialect = config('ai.databases.text_to_sql_ai.dialect', 'PostgreSQL');
+        $dialect = config('ai.databases.text_to_sql_ai.dialect', 'MySQL');
 
         return <<<PROMPT
 You are an expert {$dialect} analyst. Generate a single read-only SQL query that answers the user's question.

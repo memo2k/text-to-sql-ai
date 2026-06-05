@@ -49,7 +49,8 @@ class TextToSqlController extends Controller
             $sqlQuery = $sqlResult['sql'];
             $sqlExplanation = $sqlResult['explanation'];
 
-            $data = DB::connection('pgsql')->select($sqlQuery);
+            $connection = config('ai.databases.text_to_sql_ai.connection', 'mysql');
+            $data = DB::connection($connection)->select($sqlQuery);
 
             $question = Question::updateOrCreate(
                 [
