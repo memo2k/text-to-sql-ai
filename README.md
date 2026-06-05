@@ -2,6 +2,8 @@
 
 Ask questions about your data in plain English and get back runnable SQL plus a result table — powered by **Claude** and a realistic **e-commerce demo database**.
 
+**Live demo:** [text-to-sql-ai.on-forge.com](https://text-to-sql-ai.on-forge.com)
+
 ---
 
 ## What it does
@@ -26,16 +28,20 @@ flowchart LR
   F --> G[Results table + history]
 ```
 
+
+
 ---
 
 ## Tech stack
 
-| Layer | Choices |
-|--------|---------|
-| Backend | PHP 8.3, Laravel 13 |
-| AI | Anthropic Claude (Messages API) |
-| Database | MySQL 8 |
+
+| Layer    | Choices                                             |
+| -------- | --------------------------------------------------- |
+| Backend  | PHP 8.3, Laravel 13                                 |
+| AI       | Anthropic Claude (Messages API)                     |
+| Database | MySQL 8                                             |
 | Frontend | Blade, Tailwind CSS 4, DaisyUI, Vite, jQuery (AJAX) |
+
 
 ---
 
@@ -43,10 +49,12 @@ flowchart LR
 
 The **tech store** schema models a small online electronics shop:
 
-| Area | Tables |
-|--------|--------|
+
+| Area    | Tables                                                                                                                        |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Catalog | `product_categories`, `products`, `attributes`, `attribute_options`, `product_category_attribute`, `product_attribute_option` |
-| Sales | `customers`, `orders`, `order_products` |
+| Sales   | `customers`, `orders`, `order_products`                                                                                       |
+
 
 Categories cover laptops, smartphones, tablets, and related product types, with optional attributes (brand, RAM, storage, and so on) linked to products and orders.
 
@@ -83,14 +91,16 @@ HTTP `POST /` is rate-limited per IP (`ASKSQL_QUERIES_PER_HOUR`, default 30). Qu
 
 ## How generation works (code map)
 
-| Piece | Role |
-|--------|------|
-| `PromptService` | Builds schema text from `information_schema` + two sample rows per table |
-| `ClaudeRepository` | System prompt (JSON output, SELECT-only rules) |
-| `ClaudeService` | Anthropic HTTP client, JSON parse, delegates to validator |
-| `SqlValidator` | Read-only enforcement and `LIMIT` handling |
-| `TextToSqlController` | Validation, query execution, `Question` persistence, HTML partials |
-| `AppServiceProvider` | `text-to-sql-generate` rate limiter |
+
+| Piece                 | Role                                                                     |
+| --------------------- | ------------------------------------------------------------------------ |
+| `PromptService`       | Builds schema text from `information_schema` + two sample rows per table |
+| `ClaudeRepository`    | System prompt (JSON output, SELECT-only rules)                           |
+| `ClaudeService`       | Anthropic HTTP client, JSON parse, delegates to validator                |
+| `SqlValidator`        | Read-only enforcement and `LIMIT` handling                               |
+| `TextToSqlController` | Validation, query execution, `Question` persistence, HTML partials       |
+| `AppServiceProvider`  | `text-to-sql-generate` rate limiter                                      |
+
 
 Configuration: `config/ai.php` (model, token limits, excluded tables, demo metadata). Environment keys include `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_MAX_TOKENS`, `ASKSQL_MAX_ROWS`, and `ASKSQL_QUERIES_PER_HOUR`.
 
