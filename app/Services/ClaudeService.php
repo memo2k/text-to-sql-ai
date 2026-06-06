@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\ClaudeRepository;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ClaudeService
 {
@@ -23,7 +24,8 @@ class ClaudeService
         $apiKey = config('ai.anthropic.api_key');
 
         if (!is_string($apiKey) || $apiKey === '') {
-            return ['error' => 'AI service is not configured.'];
+            Log::error('Claude API key is not configured.');
+            return ['error' => 'Something went wrong. Try again later.'];
         }
 
         $schema = $this->promptService->buildSchemaPrompt('text_to_sql_ai');
@@ -47,6 +49,7 @@ class ClaudeService
             ]);
 
         if ($response->failed()) {
+            Log::error('Claude API error: ' . $response->body());
             if ($response->status() === 429) {
                 return ['error' => 'AI service is busy. Try again in a moment.'];
             }
@@ -58,18 +61,21 @@ class ClaudeService
         $text = $body['content'][0]['text'] ?? null;
 
         if (!is_string($text) || trim($text) === '') {
+            Log::error('Claude API returned invalid response: ' . $text);
             return ['error' => 'The model returned an invalid response. Try again.'];
         }
 
         $sqlResponse = json_decode($text, true);
 
         if (!is_array($sqlResponse)) {
+            Log::error('Claude API returned invalid response: ' . $text);
             return ['error' => 'The model returned an invalid response. Try again.'];
         }
 
         $validated = $this->sqlValidator->validate($sqlResponse['sql'] ?? '');
 
         if (isset($validated['error'])) {
+            Log::error('Claude API returned invalid response: ' . $validated['error']);
             return ['error' => $validated['error']];
         }
 
