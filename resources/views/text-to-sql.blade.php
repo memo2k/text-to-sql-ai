@@ -116,6 +116,48 @@
             });
         });
 
+        function csvEscape(value) {
+            var text = String(value ?? '');
+            if (/[",\n\r]/.test(text)) {
+                return '"' + text.replace(/"/g, '""') + '"';
+            }
+
+            return text;
+        }
+
+        function exportResultsToCsv() {
+            var $table = $('#results-table-wrap table');
+            if (!$table.length) {
+                return;
+            }
+
+            var lines = [];
+
+            lines.push(
+                $table.find('thead th').map(function () {
+                    return csvEscape($(this).text().trim());
+                }).get().join(',')
+            );
+
+            $table.find('tbody tr').each(function () {
+                lines.push(
+                    $(this).find('td').map(function () {
+                        return csvEscape($(this).text().trim());
+                    }).get().join(',')
+                );
+            });
+
+            var blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            var url = URL.createObjectURL(blob);
+            var link = document.createElement('a');
+            link.href = url;
+            link.download = 'results-' + new Date().toISOString().slice(0, 10) + '.csv';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        $results.on('click', '#export-csv-btn', exportResultsToCsv);
+
         $questions.on('click', '.delete-question', function () {
             var questionId = $(this).data('question-id');
             $.ajax({

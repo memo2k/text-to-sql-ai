@@ -5,13 +5,25 @@
 @endphp
 
 <div class="flex flex-col gap-4">
-    <p id="results-meta" class="text-xs text-base-content/45">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <p id="results-meta" class="text-xs text-base-content/45">
+            @if ($hasResults)
+                {{ count($rows) }} {{ Str::plural('row', count($rows)) }}
+            @else
+                Waiting for a question
+            @endif
+        </p>
+
         @if ($hasResults)
-            {{ count($rows) }} {{ Str::plural('row', count($rows)) }}
-        @else
-            Waiting for a question
+            <button
+                type="button"
+                id="export-csv-btn"
+                class="btn btn-ghost btn-xs rounded-full px-3 text-base-content/55 hover:text-base-content"
+            >
+                Export CSV
+            </button>
         @endif
-    </p>
+    </div>
 
     @if ($hasResults)
         @if (! empty($sql))
