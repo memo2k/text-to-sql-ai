@@ -115,6 +115,17 @@
                 setLoading(false);
             });
         });
+
+        $questions.on('click', '.delete-question', function () {
+            var questionId = $(this).data('question-id');
+            $.ajax({
+                url: '{{ route('text-to-sql.delete') }}',
+                type: 'DELETE',
+                data: { question_id: questionId, _token: '{{ csrf_token() }}' },
+            }).done(function (response) {
+                $questions.hide().html(response.questionsHtml).fadeIn(200);
+            });
+        });
     });
 </script>
 @endpush

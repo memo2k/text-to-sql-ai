@@ -81,4 +81,18 @@ class TextToSqlController extends Controller
             return response()->json(['error' => 'Something went wrong. Try again.']);
         }
     }
+
+    public function deleteQuestion(Request $request)
+    {
+        $request->validate([
+            'question_id' => 'required|exists:questions,id',
+        ]);
+
+        Question::find($request->question_id)->delete();
+
+        return response()->json(['questionsHtml' => view('text-to-sql.partials.questions', [
+            'questions' => Question::orderBy('created_at', 'desc')->get(),
+            'questionId' => null,
+        ])->render()]);
+    }
 }

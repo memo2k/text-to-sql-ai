@@ -16,7 +16,7 @@ You type a question like *“Which categories have more than five products?”* 
 4. **Validates** the SQL server-side (read-only, single statement, schema allowlist, row cap).
 5. **Runs** the query and renders the rows in the browser.
 
-Earlier questions are stored so you can reopen SQL and cached results from the sidebar without calling the model again. Submitting again for the same history entry updates that record in place.
+Earlier questions are stored so you can reopen SQL and cached results from the sidebar without calling the model again. Submitting again for the same history entry updates that record in place. Individual entries can be deleted from the sidebar.
 
 ```mermaid
 flowchart LR
@@ -85,7 +85,7 @@ Generated SQL passes through `SqlValidator` before execution:
 - Rejects Laravel infrastructure tables (`users`, `migrations`, `cache`, `jobs`, …)
 - Appends or clamps `LIMIT` to `ASKSQL_MAX_ROWS` (default 1000)
 
-HTTP `POST /` is rate-limited per IP (`ASKSQL_QUERIES_PER_HOUR`, default 30). Questions are capped at 2000 characters.
+HTTP `POST /` is rate-limited per IP (`ASKSQL_QUERIES_PER_HOUR`, default 30). `DELETE /delete-question` is limited to 10 requests per minute per IP. Questions are capped at 2000 characters.
 
 ---
 
@@ -98,13 +98,13 @@ HTTP `POST /` is rate-limited per IP (`ASKSQL_QUERIES_PER_HOUR`, default 30). Qu
 | `ClaudeRepository`    | System prompt (JSON output, SELECT-only rules)                           |
 | `ClaudeService`       | Anthropic HTTP client, JSON parse, delegates to validator                |
 | `SqlValidator`        | Read-only enforcement and `LIMIT` handling                               |
-| `TextToSqlController` | Validation, query execution, `Question` persistence, HTML partials       |
-| `AppServiceProvider`  | `text-to-sql-generate` rate limiter                                      |
+| `TextToSqlController` | Validation, query execution, `Question` persistence and deletion, HTML partials |
+| `AppServiceProvider`  | `text-to-sql-generate` and `text-to-sql-delete` rate limiters          |
 
 
 Configuration: `config/ai.php` (model, token limits, excluded tables, demo metadata). Environment keys include `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_MAX_TOKENS`, `ASKSQL_MAX_ROWS`, and `ASKSQL_QUERIES_PER_HOUR`.
 
-Routes: `/` (UI + generate), `/privacy` (privacy policy page).
+Routes: `/` (UI + generate), `DELETE /delete-question` (remove history entry), `/privacy` (privacy policy page).
 
 ---
 

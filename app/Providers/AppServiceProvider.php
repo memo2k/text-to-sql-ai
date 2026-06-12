@@ -33,5 +33,17 @@ class AppServiceProvider extends ServiceProvider
                     ], 429);
                 });
         });
+
+        RateLimiter::for('text-to-sql-delete', function (Request $request) {
+            $maxAttempts = 10;
+
+            return Limit::perMinute($maxAttempts)
+                ->by($request->ip())
+                ->response(function () {
+                    return response()->json([
+                        'error' => 'Too many questions deleted this minute. Please try again later.',
+                    ], 429);
+                });
+        });
     }
 }

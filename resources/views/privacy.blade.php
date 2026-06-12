@@ -53,7 +53,7 @@
         <h2 class="text-base font-semibold text-base-content">How we use it</h2>
         <ul class="list-disc space-y-2 pl-5">
             <li>To generate and run read-only SQL against the demo store database.</li>
-            <li>To show your question history in the sidebar on this deployment.</li>
+            <li>To show question history in the sidebar on this deployment (shared across all visitors).</li>
             <li>To enforce usage limits and keep the service stable.</li>
         </ul>
         </section>
@@ -79,8 +79,9 @@
         <section class="space-y-3">
         <h2 class="text-base font-semibold text-base-content">Retention</h2>
         <p>
-            Submitted questions and results are stored in the application database until the operator
-            deletes them or resets the database. Server logs may be retained according to the hosting provider’s policies.
+            Submitted questions and results are stored in the application database until you delete them
+            from the sidebar, the operator removes them, or the database is reset. Server logs may be
+            retained according to the hosting provider’s policies.
         </p>
         </section>
 
@@ -90,7 +91,11 @@
             <li>Do not use the demo if you do not agree with this notice.</li>
             <li>Only ask questions about the demo data; avoid typing real personal details.</li>
             <li>
-                To request deletion of stored questions associated with your use, contact the operator
+                Delete individual history entries from the sidebar at any time. Because there are no
+                accounts, history is shared on this deployment — deleting an entry removes it for everyone.
+            </li>
+            <li>
+                For broader deletion requests (for example, server logs), contact the operator
                 @if ($contactEmail = config('mail.from.address'))
                     at <a href="mailto:{{ $contactEmail }}" class="link link-primary">{{ $contactEmail }}</a>.
                 @else
