@@ -1,3 +1,5 @@
+@use('App\Services\ResultFormatter')
+
 @php
     $rows = $rows ?? [];
     $hasResults = count($rows) > 0;
@@ -57,7 +59,7 @@
                             @php $row = (array) $row; @endphp
                             <tr class="hover:bg-base-200/40">
                                 @foreach ($columns as $column)
-                                    <td class="font-normal text-base-content/85">{{ $row[$column] ?? '' }}</td>
+                                    <td class="font-normal text-base-content/85">{{ ResultFormatter::cell($column, $row[$column] ?? null) }}</td>
                                 @endforeach
                             </tr>
                         @endforeach
