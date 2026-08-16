@@ -65,7 +65,7 @@ class ClaudeService
             return ['error' => 'The model returned an invalid response. Try again.'];
         }
 
-        $sqlResponse = json_decode($text, true);
+        $sqlResponse = $this->decodeJsonPayload($text);
 
         if (!is_array($sqlResponse)) {
             Log::error('Claude API returned invalid response: ' . $text);
@@ -83,5 +83,35 @@ class ClaudeService
             'sql' => $validated['sql'],
             'explanation' => $sqlResponse['explanation'] ?? '',
         ];
+    }
+
+    /**
+     * Models often wrap JSON in markdown fences or quotes.
+     */
+    private function decodeJsonPayload(string $text): ?array
+    {
+        $cleaned = trim($text);
+        $cleaned = trim($cleaned, "\"'");
+        $cleaned = trim($cleaned);
+
+        if (preg_match('/^```(?:json)?\s*(.*?)\s*```$/is', $cleaned, $matches) === 1) {
+            $cleaned = trim($matches[1]);
+        }
+
+        $decoded = json_decode($cleaned, true);
+
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        if (preg_match('/\{.*\}/s', $cleaned, $matches) === 1) {
+            $decoded = json_decode($matches[0], true);
+
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return null;
     }
 }
