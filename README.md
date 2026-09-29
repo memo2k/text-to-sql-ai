@@ -1,122 +1,66 @@
 # Text to SQL AI
 
-Ask questions about your data in plain English and get back runnable SQL plus a result table — powered by **Claude** and a realistic **e-commerce demo database**.
+A Laravel application that turns plain-English questions about an electronics store into SQL and displays the results.
 
 **Live demo:** [text-to-sql-ai.on-forge.com](https://text-to-sql-ai.on-forge.com)
 
----
+![Asking a question and viewing the generated SQL and results](public/demo.gif)
 
-## What it does
+A question such as “Which categories have more than five products?” returns a `SELECT` statement, a short explanation, and a result table. Previous questions are kept in a sidebar and can be reopened without another model call. Submitting the same history entry again updates that record. Individual entries can be deleted.
 
-You type a question like *“Which categories have more than five products?”* The [AskSQL](https://github.com/memo2k/asksql) package:
+## How it works
 
-1. **Introspects** the MySQL schema (tables, columns, foreign keys, and sample rows) while hiding framework tables and system schemas.
-2. **Sends** that context and your question to the Anthropic Messages API.
-3. **Parses** a structured JSON response with the generated `SELECT` and a short explanation.
-4. **Validates** the SQL server-side (read-only, single statement, schema allowlist, row cap).
-5. **Runs** the query. This app then renders the rows and stores the question in history.
+This application provides the form, the result view, and question history. SQL generation and execution are handled by [memo2k/asksql](https://github.com/memo2k/asksql).
 
-Earlier questions are stored so you can reopen SQL and cached results from the sidebar without calling the model again. Submitting again for the same history entry updates that record in place. Individual entries can be deleted from the sidebar.
+On each question, the package:
 
-```mermaid
-flowchart LR
-  A[Natural language question] --> B[AskSql::ask]
-  B --> C[Results table + history]
-```
+1. Reads the MySQL schema, including tables, columns, foreign keys, and sample rows.
+2. Sends that schema and the question to Claude.
+3. Receives a `SELECT` statement and a short explanation.
+4. Validates that the SQL is a single read-only statement.
+5. Executes the query and returns the rows.
 
+The application then renders the table and stores the question.
 
-
----
-
-## Tech stack
-
-
-| Layer    | Choices                                             |
-| -------- | --------------------------------------------------- |
-| Backend  | PHP 8.4, Laravel 13, memo2k/asksql                  |
-| AI       | Anthropic Claude (Messages API)                     |
-| Database | MySQL 8                                             |
-| Frontend | Blade, Tailwind CSS 4, DaisyUI, Vite, jQuery (AJAX) |
-
-
----
+Framework tables (`users`, `migrations`, `cache`, `jobs`, and similar) are excluded from schema introspection. The `questions` history table is excluded as well, through `ASKSQL_EXCLUDED_TABLES=questions`, so it is not exposed to the model.
 
 ## Demo database
 
-The **tech store** schema models a small online electronics shop:
+The included database models a small electronics shop:
 
+- **Catalog:** categories, products, and attributes such as brand, RAM, and storage
+- **Sales:** customers, orders, and order line items
 
-| Area    | Tables                                                                                                                        |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Catalog | `product_categories`, `products`, `attributes`, `attribute_options`, `product_category_attribute`, `product_attribute_option` |
-| Sales   | `customers`, `orders`, `order_products`                                                                                       |
-
-
-Categories cover laptops, smartphones, tablets, and related product types, with optional attributes (brand, RAM, storage, and so on) linked to products and orders.
-
-The `questions` table holds query history for the UI; it is excluded from schema introspection so the model never sees it.
-
----
-
-## Example questions
-
-Try prompts like these against the demo store:
+Example questions:
 
 - Top 5 products by total order amount
 - Products that have never been ordered
 - Monthly revenue for the last 12 months
 - Categories with more than 2 products
 
-AskSQL is installed from Packagist as `memo2k/asksql`.
+## Tech stack
 
----
+- PHP 8.4, Laravel 13, MySQL 8
+- [memo2k/asksql](https://github.com/memo2k/asksql)
+- Blade, Tailwind CSS 4, DaisyUI, Vite, and jQuery (AJAX)
 
-## Safety and limits
+## Limits
 
-Generated SQL is checked inside AskSQL before execution:
+AskSQL accepts only a single `SELECT` or `WITH … SELECT` statement. Write operations, multiple statements, and references to system schemas are rejected. Result sets are capped by `ASKSQL_MAX_ROWS` (default 1000).
 
-- Only a single `SELECT` or `WITH … SELECT` statement
-- Blocks DDL/DML, multi-statements, comments used to smuggle keywords, and risky phrases (`INTO OUTFILE`, `FOR UPDATE`, etc.)
-- Rejects references to `information_schema`, `mysql`, and other forbidden schemas
-- Rejects Laravel infrastructure tables (`users`, `migrations`, `cache`, `jobs`, …)
-- Appends or clamps `LIMIT` to `ASKSQL_MAX_ROWS` (default 1000)
+`POST /` is rate-limited per IP by `ASKSQL_QUERIES_PER_HOUR` (30 in `.env.example`). `DELETE /delete-question` is limited to 10 requests per minute per IP. Questions are limited to 2000 characters.
 
-HTTP `POST /` is rate-limited per IP (`ASKSQL_QUERIES_PER_HOUR`, default 60). `DELETE /delete-question` is limited to 10 requests per minute per IP. Questions are capped at 2000 characters.
+## Configuration
 
----
+`ANTHROPIC_API_KEY` is required. AskSQL ships its own configuration, so this application does not publish `config/asksql.php`.
 
-## How generation works (code map)
+Optional variables in `.env.example`:
 
-
-| Piece                 | Role                                                                     |
-| --------------------- | ------------------------------------------------------------------------ |
-| `AskSql::ask()`       | Schema, model call, SQL checks, and query execution                      |
-| `TextToSqlController` | Request validation, `Question` history, and HTML partials                |
-| `ResultFormatter`     | Display labels for values such as payment methods                        |
-| `AppServiceProvider`  | `text-to-sql-generate` and `text-to-sql-delete` rate limiters            |
-
-
-AskSQL uses its own config. The only required environment key is `ANTHROPIC_API_KEY`. `ASKSQL_EXCLUDED_TABLES=questions` keeps query history out of the schema. Optional keys include `ANTHROPIC_MODEL`, `ANTHROPIC_MAX_TOKENS`, `ASKSQL_MAX_ROWS`, and `ASKSQL_QUERIES_PER_HOUR`.
-
-Routes: `/` (UI + generate), `DELETE /delete-question` (remove history entry), `/privacy` (privacy policy page).
-
----
-
-## Project structure
-
-```
-app/
-  Http/Controllers/TextToSqlController.php
-  Models/                          # Product, Order, Customer, Question, …
-  Services/ResultFormatter.php
-database/migrations/             # store schema + questions
-resources/views/
-  text-to-sql.blade.php
-  text-to-sql/partials/
-  privacy.blade.php
-```
-
----
+- `ANTHROPIC_MODEL`
+- `ANTHROPIC_MAX_TOKENS`
+- `ASKSQL_MAX_ROWS`
+- `ASKSQL_QUERIES_PER_HOUR`
+- `ASKSQL_EXCLUDED_TABLES=questions`
 
 ## License
 
