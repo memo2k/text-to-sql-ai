@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('text-to-sql-generate', function (Request $request) {
-            $maxAttempts = config('ai.limits.queries_per_hour');
+            $maxAttempts = (int) config('asksql.limits.queries_per_hour', 60);
 
             return Limit::perHour($maxAttempts)
                 ->by($request->ip())
