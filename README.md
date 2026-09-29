@@ -1,6 +1,6 @@
 # Text to SQL AI
 
-A Laravel application that turns plain-English questions about an electronics store into SQL and displays the results.
+A Laravel application that turns plain-English questions into SQL and displays the results.
 
 **Live demo:** [text-to-sql-ai.on-forge.com](https://text-to-sql-ai.on-forge.com)
 
