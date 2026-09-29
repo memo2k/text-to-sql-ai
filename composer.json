@@ -12,7 +12,8 @@
         "php": "^8.4",
         "fakerphp/faker": "^1.23",
         "laravel/framework": "^13.8",
-        "laravel/tinker": "^3.0"
+        "laravel/tinker": "^3.0",
+        "memo2k/asksql": "^0.1"
     },
     "require-dev": {
         "laravel/pail": "^1.2.5",
