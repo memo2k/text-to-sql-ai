@@ -3,26 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
-use App\Services\ClaudeService;
+use AskSql\AskSql\Facades\AskSql;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TextToSqlController extends Controller
 {
-    protected ClaudeService $claudeService;
-
-    public function __construct(ClaudeService $claudeService)
-    {
-        $this->claudeService = $claudeService;
-    }
-
     public function index(Request $request)
     {
         $questions = Question::orderBy('created_at', 'desc')->get();
         $question = Question::find($request->question_id, ['id', 'question', 'sql_query', 'result']);
-        $rows = isset($question) ? json_decode($question->result, true) : null;
-        $sql = isset($question) ? $question->sql_query : null;
+        $stored = $question?->result;
+        $rows = is_array($stored) ? $stored : (is_string($stored) ? json_decode($stored, true) : null);
+        $sql = $question?->sql_query;
 
         return view('text-to-sql', [
             'question' => $question ?? null,
@@ -34,23 +27,17 @@ class TextToSqlController extends Controller
 
     public function generate(Request $request)
     {
-        $maxQuestionLength = config('ai.limits.max_question_length');
+        $maxQuestionLength = (int) config('asksql.limits.max_question_length', 2000);
         $request->validate([
             'question' => "required|string|max:{$maxQuestionLength}",
         ]);
 
         try {
-            $sqlResult = $this->claudeService->generateSqlQuery($request->question);
+            $result = AskSql::ask($request->string('question')->toString());
 
-            if (isset($sqlResult['error'])) {
-                return response()->json(['error' => $sqlResult['error']]);
+            if ($result->failed()) {
+                return response()->json(['error' => $result->error]);
             }
-
-            $sqlQuery = $sqlResult['sql'];
-            $sqlExplanation = $sqlResult['explanation'];
-
-            $connection = config('ai.databases.text_to_sql_ai.connection', 'mysql');
-            $data = DB::connection($connection)->select($sqlQuery);
 
             $question = Question::updateOrCreate(
                 [
@@ -58,15 +45,15 @@ class TextToSqlController extends Controller
                 ],
                 [
                     'question' => $request->question,
-                    'sql_query' => $sqlQuery,
-                    'sql_explanation' => $sqlExplanation,
-                    'result' => json_encode($data),
+                    'sql_query' => $result->sql,
+                    'sql_explanation' => $result->explanation,
+                    'result' => $result->rows,
                 ]
             );
 
             $resultsHtml = view('text-to-sql.partials.results', [
-                'rows' => $data,
-                'sql' => $sqlQuery,
+                'rows' => $result->rows,
+                'sql' => $result->sql,
             ])->render();
 
             $questionsHtml = view('text-to-sql.partials.questions', [
